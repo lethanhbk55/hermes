@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mario>
+	<name>MarioHermes</name>
+	<datasources>
+		<sql>
+			<name>hermes_mysql</name>
+			<variables>
+				<variable name="url" type="string">jdbc:mysql://localhost:3306/gaia_hermes
+				</variable>
+				<variable name="driverClassName" type="string">com.mysql.jdbc.Driver
+				</variable>
+				<variable name="username" type="string">root</variable>
+				<variable name="password" type="string">Alert.show(1)</variable>
+				<!-- <variable name="validatorClassName" type="string"></variable> -->
+				<variable name="minPool" type="integer">4</variable>
+				<variable name="maxPool" type="integer">32</variable>
+				<!-- <variable name="maxSize" type="integer"></variable> -->
+				<variable name="idleTimeout" type="integer">10000</variable>
+				<variable name="loginTimeout" type="integer">10000</variable>
+			</variables>
+		</sql>
+	</datasources>
+
+	<servers>
+		<http>
+			<name>hermes_http_server_1</name>
+			<port>9293</port>
+			<options>no_sessions</options>
+		</http>
+		<http>
+			<name>hermes_http_server_2</name>
+			<port>9204</port>
+			<options>no_sessions</options>
+		</http>
+	</servers>
+
+	<gateways>
+		<http>
+			<name>http-9293</name>
+			<server>hermes_http_server_1</server>
+			<path>/*</path>
+			<async>true</async>
+			<workerpool>
+				<poolsize>8</poolsize>
+				<ringbuffersize>2048</ringbuffersize>
+				<threadnamepattern>Worker Pool #%d</threadnamepattern>
+			</workerpool>
+		</http>
+
+		<http>
+			<name>http-9204</name>
+			<server>hermes_http_server_2</server>
+			<deserializer>com.gaia.hermes.HttpMultipartDeserializer</deserializer>
+			<path>/*</path>
+			<usemultipath>true</usemultipath>
+			<async>true</async>
+			<workerpool>
+				<poolsize>8</poolsize>
+				<ringbuffersize>2048</ringbuffersize>
+				<threadnamepattern>Worker Pool #%d</threadnamepattern>
+			</workerpool>
+		</http>
+	</gateways>
+
+	<lifecycles>
+		<handler>
+			<name>MarioHermes</name>
+			<handle>com.gaia.hermes.MessengerHandler</handle>
+			<bind>
+				<gateway>http-9293</gateway>
+			</bind>
+			<variables>
+				<variable name="dataSourceName" type="string">hermes_mysql</variable>
+				<variable name="debug" type="boolean">false</variable>
+			</variables>
+		</handler>
+
+		<handler>
+			<name>UploadFileHandler</name>
+			<handle>com.gaia.hermes.UploadFileHandler</handle>
+			<bind>
+				<gateway>http-9204</gateway>
+			</bind>
+		</handler>
+	</lifecycles>
+</mario>
