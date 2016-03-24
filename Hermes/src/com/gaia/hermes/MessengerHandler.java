@@ -3,27 +3,28 @@ package com.gaia.hermes;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 
+import com.fullmoon.job.Job;
+import com.fullmoon.job.JobHandler;
+import com.fullmoon.job.factory.JobFactory;
+import com.fullmoon.worker.impl.DisruptorWorkerPool;
+import com.gaia.hermes.async.jobs.CreateApplicationJob;
+import com.gaia.hermes.async.jobs.HermesResult;
+import com.gaia.hermes.async.jobs.RegisterDeviceTokenJob;
 import com.gaia.hermes.bean.ApnsCertificateBean;
 import com.gaia.hermes.bean.ApplicationBean;
 import com.gaia.hermes.bean.ApplicationConfigBean;
-import com.gaia.hermes.bean.DeviceBean;
-import com.gaia.hermes.bean.DeviceTokenBean;
 import com.gaia.hermes.bean.GcmKeyBean;
-import com.gaia.hermes.bean.PlatformBean;
-import com.gaia.hermes.bean.PushNoficationConfigBean;
 import com.gaia.hermes.bean.PushNotificationBean;
-import com.gaia.hermes.jobs.CreateApplicationJob;
-import com.gaia.hermes.jobs.RegisterDeviceJob;
+import com.gaia.hermes.bean.PushNotificationConfigBean;
 import com.gaia.hermes.model.ApnsCertificateModel;
 import com.gaia.hermes.model.ApplicationConfigModel;
 import com.gaia.hermes.model.ApplicationModel;
-import com.gaia.hermes.model.DeviceModel;
-import com.gaia.hermes.model.DeviceTokenModel;
 import com.gaia.hermes.model.GcmKeyModel;
 import com.gaia.hermes.model.PushNotificationConfigModel;
 import com.gaia.hermes.model.PushNotificationModel;
@@ -34,23 +35,23 @@ import com.gaia.hermes.pushnotification.message.BaseToastMessage;
 import com.gaia.hermes.statics.Command;
 import com.gaia.hermes.statics.Field;
 import com.mario.entity.impl.BaseCommandRoutingHandler;
+import com.mario.entity.message.CloneableMessage;
 import com.mario.entity.message.Message;
-import com.mario.schedule.ScheduledCallback;
+import com.nhb.common.async.BaseRPCFuture;
 import com.nhb.common.data.MapTuple;
 import com.nhb.common.data.PuElement;
+import com.nhb.common.data.PuNull;
 import com.nhb.common.data.PuObject;
 import com.nhb.common.data.PuObjectRO;
 import com.nhb.common.db.models.ModelFactory;
 import com.nhb.common.db.sql.resp.SqlUpdateResponse;
-import com.nhb.common.transaction.DistributedTransactionJob;
 import com.nhb.common.utils.FileSystemUtils;
 
 public class MessengerHandler extends BaseCommandRoutingHandler {
 	private ModelFactory factory;
-	private static int lastPushStatus = 0;
 	private ExecutorService executorService;
 	private boolean debug = false;
-	private int lastPushSuccess = 0;
+	private JobFactory jobFactory;
 
 	@Override
 	public void init(PuObjectRO initParams) {
@@ -59,16 +60,20 @@ public class MessengerHandler extends BaseCommandRoutingHandler {
 		if (initParams.variableExists(Field.DATASOURCE_NAME)) {
 			this.factory.setDbAdapter(getApi().getDatabaseAdapter(initParams.getString(Field.DATASOURCE_NAME)));
 		}
-		// executorService = Executors.newFixedThreadPool(32);
 		this.debug = initParams.getBoolean("debug", false);
+		this.jobFactory = new JobFactory();
+		jobFactory.setWorkerPool(new DisruptorWorkerPool<PuObject>(8, 1024, "Hermes Worker #%d"));
 	}
 
 	@Override
+	@SuppressWarnings("rawtypes")
 	public PuElement handle(Message message) {
 		PuObject data = (PuObject) message.getData();
+		getLogger().debug("handle request: {}", data);
 		Object result = null;
 		int status = 1;
-		getLogger().debug("handle request: {}", data);
+		Message cloneableMessage = ((CloneableMessage) message).makeClone();
+
 		try {
 			String command = data.getString(Field.COMMAND);
 			if (command != null) {
@@ -76,35 +81,49 @@ public class MessengerHandler extends BaseCommandRoutingHandler {
 				case Command.REGISTER: {
 					if (data.variableExists(Field.PLATFORM_ID) && data.variableExists(Field.UDID)
 							&& data.variableExists(Field.BUNDLE_ID) && data.variableExists(Field.TOKEN)) {
-						DistributedTransactionJob job = new RegisterDeviceJob(this.factory.newModel(DeviceModel.class),
-								this.factory.newModel(DeviceTokenModel.class),
-								this.factory.newModel(ApplicationModel.class));
-						if (job.execute(data)) {
-							result = job.getResult();
-							status = 0;
-						} else {
-							result = job.getFailureDetails();
-						}
+						RegisterDeviceTokenJob job = this.jobFactory.newJob(RegisterDeviceTokenJob.class);
+						job.buildTasks(this);
+						job.setHandler(new JobHandler() {
+
+							@Override
+							public void onJobTimedOut(Job job) {
+
+							}
+
+							@Override
+							public void onJobFinished(Job job) {
+								if (cloneableMessage != null) {
+									message.getCallback().onHandleComplete(cloneableMessage,
+											((HermesResult) job.getResult()).toPuObject());
+								}
+							}
+						});
+						job.execute(data);
 					} else {
 						result = "paramters are missing for register job";
 					}
-					break;
+					return PuNull.IGNORE_ME;
 				}
 				case Command.CREATE_APPLICATION: {
 					if (data.variableExists(Field.BUNDLE_ID) && data.variableExists(Field.KEY)
 							&& data.variableExists(Field.FILE_PATH) && data.variableExists(Field.NAME)
 							&& data.variableExists(Field.PASSWORD)) {
-						DistributedTransactionJob job = new CreateApplicationJob(
-								this.factory.newModel(ApplicationModel.class),
-								this.factory.newModel(ApnsCertificateModel.class),
-								this.factory.newModel(GcmKeyModel.class),
-								this.factory.newModel(PushNotificationConfigModel.class));
-						if (job.execute(data)) {
-							result = job.getResult();
-							status = 0;
-						} else {
-							result = job.getFailureDetails();
-						}
+						CreateApplicationJob job = this.jobFactory.newJob(CreateApplicationJob.class);
+						job.buildTasks(this);
+						job.setHandler(new JobHandler() {
+
+							@Override
+							public void onJobTimedOut(Job job) {
+
+							}
+
+							@Override
+							public void onJobFinished(Job job) {
+								message.getCallback().onHandleComplete(cloneableMessage,
+										((HermesResult) job.getResult()).toPuObject());
+							}
+						});
+						job.execute(data);
 					} else {
 						result = "paramters are missing for create application job";
 					}
@@ -133,7 +152,7 @@ public class MessengerHandler extends BaseCommandRoutingHandler {
 							byte[] pushNotificationConfigId = application.getPushNotificationConfigId();
 							PushNotificationConfigModel configModel = this.factory
 									.newModel(PushNotificationConfigModel.class);
-							PushNoficationConfigBean config = configModel.findById(pushNotificationConfigId);
+							PushNotificationConfigBean config = configModel.findById(pushNotificationConfigId);
 							if (config != null) {
 								if (filePath != null && password != null) {
 									ApnsCertificateBean bean = new ApnsCertificateBean();
@@ -213,27 +232,6 @@ public class MessengerHandler extends BaseCommandRoutingHandler {
 									}
 
 									int applePushSuccessful = appleTokens.size();
-									if (appleTokens.size() > 0 && lastPushStatus == 0) {
-										getApi().getScheduler().schedule(0, new ScheduledCallback() {
-
-											@Override
-											public void call() {
-												lastPushStatus = 1;
-												lastPushSuccess = appleApi.push(appleTokens, letter);
-												lastPushStatus = 0;
-											}
-										});
-									}
-
-									int googlePushSuccessful = googleApi.push(googleTokens, letter);
-									PuObject resp = PuObject.fromObject(new MapTuple<>(Field.COUNT,
-											applePushSuccessful + googlePushSuccessful, Field.NUMBER, targets.size()));
-									if (lastPushStatus == 1) {
-										resp.getString("message",
-												"wait for last push notification ios successful, last push success: "
-														+ lastPushSuccess);
-									}
-									result = resp;
 									status = 0;
 								} else {
 									result = "no targets to push";
@@ -247,61 +245,6 @@ public class MessengerHandler extends BaseCommandRoutingHandler {
 						}
 					} else {
 						result = "message is missing";
-					}
-					break;
-				}
-				case Command.PUSH_TOKENS: {
-					String tokens = data.getString(Field.TOKENS);
-					String[] listTokens = tokens.split(",");
-					List<String> googleTokens = new ArrayList<>();
-					List<String> appleTokens = new ArrayList<>();
-					ApplicationConfigModel applicationConfigModel = this.factory.newModel(ApplicationConfigModel.class);
-					DeviceTokenModel tokenModel = this.factory.newModel(DeviceTokenModel.class);
-					DeviceModel deviceModel = this.factory.newModel(DeviceModel.class);
-
-					byte[] applicationId = null;
-					if (listTokens.length > 0) {
-						DeviceTokenBean deviceToken = tokenModel.findByToken(listTokens[0]);
-						if (deviceToken != null) {
-							applicationId = deviceToken.getApplicationId();
-						}
-					}
-					BaseToastMessage letter = new BaseToastMessage(data.getString(Field.MESSAGE));
-
-					if (applicationId != null) {
-						ApplicationConfigBean config = applicationConfigModel.findById(applicationId);
-						if (data.variableExists(Field.TITLE)) {
-							letter.setTitle(data.getString(Field.TITLE));
-						} else {
-							letter.setTitle(config.getApplicationName());
-						}
-						String filePath = FileSystemUtils.createPathFrom(
-								FileSystemUtils.getBasePathForClass(ApplePushNotificationService.class), "resources",
-								config.getFilePath());
-						getLogger().debug("filepath: {}", filePath);
-						PushNoficationApi appleApi = new ApplePushNotificationService(filePath,
-								config.getAppleCertificatePassword(), debug);
-						PushNoficationApi googleApi = new GcmPushNotification(config.getGoogleApiKey());
-
-						for (String token : listTokens) {
-							DeviceTokenBean deviceToken = tokenModel.findByToken(token);
-							DeviceBean device = deviceModel.findById(deviceToken.getDeviceId());
-							if (device.getPlatformId() == PlatformBean.APPLE) {
-								appleTokens.add(token);
-							} else if (device.getPlatformId() == PlatformBean.ANDROID) {
-								googleTokens.add(token);
-							}
-						}
-
-						int applePushSuccessful = appleApi.push(appleTokens, letter);
-						int googlePushSuccessful = googleApi.push(googleTokens, letter);
-						getLogger().debug("apple report: {}/{}", applePushSuccessful, appleTokens.size());
-						getLogger().debug("google report: {}/{}", googlePushSuccessful, googleTokens.size());
-						result = PuObject.fromObject(new MapTuple<>(Field.COUNT,
-								applePushSuccessful + googlePushSuccessful, Field.NUMBER, listTokens.length));
-						status = 0;
-					} else {
-						result = "application cannot be found";
 					}
 					break;
 				}
@@ -378,6 +321,7 @@ public class MessengerHandler extends BaseCommandRoutingHandler {
 	}
 
 	@Override
+	@SuppressWarnings("rawtypes")
 	public PuElement interop(PuElement request) {
 		PuObject requestParams = (PuObject) request;
 		if (requestParams.variableExists(Field.COMMAND)) {
@@ -388,20 +332,28 @@ public class MessengerHandler extends BaseCommandRoutingHandler {
 				if (data.variableExists(Field.BUNDLE_ID) && data.variableExists(Field.KEY)
 						&& data.variableExists(Field.FILE_PATH) && data.variableExists(Field.NAME)
 						&& data.variableExists(Field.PASSWORD)) {
-					DistributedTransactionJob job = new CreateApplicationJob(
-							this.factory.newModel(ApplicationModel.class),
-							this.factory.newModel(ApnsCertificateModel.class), this.factory.newModel(GcmKeyModel.class),
-							this.factory.newModel(PushNotificationConfigModel.class));
-					int status = 1;
-					PuObject result = new PuObject();
-					if (job.execute(data)) {
-						status = 0;
-						result.setPuObject(Field.DATA, job.getResult());
-					} else {
-						result.setPuObject(Field.DATA, job.getFailureDetails());
+					BaseRPCFuture<PuObject> result = new BaseRPCFuture<>();
+					CreateApplicationJob job = this.jobFactory.newJob(CreateApplicationJob.class);
+					job.buildTasks(this);
+					job.setHandler(new JobHandler() {
+
+						@Override
+						public void onJobTimedOut(Job job) {
+
+						}
+
+						@Override
+						public void onJobFinished(Job job) {
+							result.set(((HermesResult) job.getResult()).toPuObject());
+							result.done();
+						}
+					});
+
+					try {
+						return result.get();
+					} catch (InterruptedException | ExecutionException e) {
+						throw new RuntimeException("error while create application", e);
 					}
-					result.setInteger(Field.STATUS, status);
-					return result;
 				}
 				break;
 			}
@@ -428,7 +380,7 @@ public class MessengerHandler extends BaseCommandRoutingHandler {
 						byte[] pushNotificationConfigId = application.getPushNotificationConfigId();
 						PushNotificationConfigModel configModel = this.factory
 								.newModel(PushNotificationConfigModel.class);
-						PushNoficationConfigBean config = configModel.findById(pushNotificationConfigId);
+						PushNotificationConfigBean config = configModel.findById(pushNotificationConfigId);
 						int status = 1;
 						String result = "";
 						if (config != null) {
@@ -469,6 +421,10 @@ public class MessengerHandler extends BaseCommandRoutingHandler {
 		}
 
 		return null;
+	}
+
+	public ModelFactory getModelFactory() {
+		return this.factory;
 	}
 
 	@Override

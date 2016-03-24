@@ -9,11 +9,25 @@
 	<classpathentry kind="lib" path="lib/java-wns-1.3-jar-with-dependencies.jar"/>
 	<classpathentry kind="lib" path="lib/json_simple-1.1.jar"/>
 	<classpathentry kind="lib" path="lib/mockito-all-1.8.5.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-api-1.7.10.jar"/>
+	<classpathentry kind="lib" path="lib/commons-lang-2.6.jar"/>
+	<classpathentry kind="lib" path="lib/pushy-0.5.2.jar"/>
+	<classpathentry kind="lib" path="lib/jdbi-2.72.jar"/>
+	<classpathentry kind="lib" path="lib/disruptor-3.3.4.jar"/>
+	<classpathentry kind="lib" path="lib/netty-buffer-4.1.0.CR2.jar"/>
+	<classpathentry kind="lib" path="lib/netty-codec-4.1.0.CR2.jar"/>
+	<classpathentry kind="lib" path="lib/netty-codec-http-4.1.0.CR2.jar"/>
+	<classpathentry kind="lib" path="lib/netty-codec-http2-4.1.0.CR2.jar"/>
+	<classpathentry kind="lib" path="lib/netty-common-4.1.0.CR2.jar"/>
+	<classpathentry kind="lib" path="lib/netty-handler-4.1.0.CR2.jar"/>
+	<classpathentry kind="lib" path="lib/netty-resolver-4.1.0.CR2.jar"/>
+	<classpathentry kind="lib" path="lib/netty-transport-4.1.0.CR2.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/MarioCommon"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Jetty"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/SLF4J_API"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/Mario"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/NHBCommon"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/NHBCommonDB"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Fullmoon"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

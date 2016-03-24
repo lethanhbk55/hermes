@@ -11,6 +11,7 @@ import com.google.android.gcm.server.MulticastResult;
 import com.google.android.gcm.server.Result;
 import com.google.android.gcm.server.Sender;
 import com.nhb.common.BaseLoggable;
+import com.nhb.common.async.Callback;
 
 public class GcmPushNotification extends BaseLoggable implements PushNoficationApi {
 	private String googleApiKey;
@@ -21,9 +22,10 @@ public class GcmPushNotification extends BaseLoggable implements PushNoficationA
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public int push(Object targetToken, ToastMessage message) {
+	public void push(Object targetToken, ToastMessage message, Callback<PushNotificationResult> callback) {
 		Sender sender = new Sender(this.googleApiKey);
 		Builder builder = new Message.Builder().timeToLive(30).delayWhileIdle(true);
+		int successful = 0;
 
 		if (message.getContent() != null) {
 			builder.addData("alert", message.getContent());
@@ -46,22 +48,19 @@ public class GcmPushNotification extends BaseLoggable implements PushNoficationA
 						success += result.getSuccess();
 					}
 					getLogger().debug("push notification success: {}", success);
-					return success;
+					successful = success;
 				} else {
 					getLogger().debug("no device has been pushed");
-					return 0;
 				}
 			} else {
 				Result result = sender.send(gcmMessage, (String) targetToken, 1);
-				getLogger().debug("send status: {}", result);
-				if (result.getMessageId() != null) {
-					return 1;
-				}
+				getLogger().debug("send status: {}", result.getSuccess());
+				successful = result.getSuccess();
 			}
 		} catch (IOException e) {
 			getLogger().debug("error", e);
 		}
-		return 0;
+		callback.apply(new PushNotificationResult(successful));
 	}
 
 }

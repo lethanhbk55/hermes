@@ -31,4 +31,8 @@ public class DeviceBean extends UUIDBean {
 	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
 	}
+
+	public void autoTimestamp() {
+		this.timestamp = (int) (System.currentTimeMillis() / 1000);
+	}
 }

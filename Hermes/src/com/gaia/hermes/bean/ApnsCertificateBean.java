@@ -31,4 +31,8 @@ public class ApnsCertificateBean extends UUIDBean {
 	public void setPassword(String password) {
 		this.password = password;
 	}
+
+	public void autoTimestamp() {
+		this.timestamp = (int) (System.currentTimeMillis() / 1000);
+	}
 }

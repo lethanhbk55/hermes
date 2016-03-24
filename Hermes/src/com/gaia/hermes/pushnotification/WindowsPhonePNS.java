@@ -3,6 +3,7 @@ package com.gaia.hermes.pushnotification;
 import java.util.List;
 
 import com.gaia.hermes.pushnotification.message.ToastMessage;
+import com.nhb.common.async.Callback;
 
 import ar.com.fernandospr.wns.WnsService;
 import ar.com.fernandospr.wns.model.WnsNotificationResponse;
@@ -21,7 +22,7 @@ public class WindowsPhonePNS implements PushNoficationApi {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public int push(Object targetToken, ToastMessage message) {
+	public void push(Object targetToken, ToastMessage message, Callback<PushNotificationResult> callback) {
 		WnsService service = new WnsService(sid, clientSecret, logging);
 		WnsToastBuilder builder = new WnsToastBuilder();
 		if (message.getContent() != null) {
@@ -42,6 +43,6 @@ public class WindowsPhonePNS implements PushNoficationApi {
 			System.out.println("status: " + status.notificationStatus);
 		}
 
-		return 0;
+		callback.apply(new PushNotificationResult(0));
 	}
 }

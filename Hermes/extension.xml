@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mario>
-	<name>MarioHermes</name>
+	<name>Hermes</name>
+	
 	<datasources>
 		<sql>
 			<name>hermes_mysql</name>

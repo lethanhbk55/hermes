@@ -10,8 +10,6 @@
 	<property name="dist" value="dist" />
 	<property name="dist.jar" value="${dist}/jar" />
 	<property name="dist.ext" value="${dist}/ext" />
-	
-	<echo message="${deploy.path}"></echo>
 
 	<!-- clean cache for ivy -->
 	<target name="clean-cache" description="--> clean the ivy cache">
@@ -20,10 +18,6 @@
 
 	<!-- User when ivy.xml changed -->
 	<target name="resolve" description="retreive dependencies with ivy">
-		<delete dir="${lib}">
-			<include name="*.jar" />
-			<exclude name="sqljdbc*.jar" />
-		</delete>
 		<ivy:retrieve />
 	</target>
 

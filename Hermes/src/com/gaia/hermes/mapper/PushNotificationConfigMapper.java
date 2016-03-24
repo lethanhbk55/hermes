@@ -6,14 +6,14 @@ import java.sql.SQLException;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
-import com.gaia.hermes.bean.PushNoficationConfigBean;
+import com.gaia.hermes.bean.PushNotificationConfigBean;
 import com.gaia.hermes.statics.DBField;
 
-public class PushNotificationConfigMapper implements ResultSetMapper<PushNoficationConfigBean> {
+public class PushNotificationConfigMapper implements ResultSetMapper<PushNotificationConfigBean> {
 
 	@Override
-	public PushNoficationConfigBean map(int arg0, ResultSet result, StatementContext arg2) throws SQLException {
-		PushNoficationConfigBean bean = new PushNoficationConfigBean();
+	public PushNotificationConfigBean map(int arg0, ResultSet result, StatementContext arg2) throws SQLException {
+		PushNotificationConfigBean bean = new PushNotificationConfigBean();
 		bean.setId(result.getBytes(DBField.ID));
 		bean.setGcmKeyId(result.getBytes(DBField.GCM_KEY_ID));
 		bean.setApnsCertificateId(result.getBytes(DBField.APNS_CERTIFICATE_ID));

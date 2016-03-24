@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.gaia.hermes.pushnotification.message.ToastMessage;
 import com.nhb.common.BaseLoggable;
+import com.nhb.common.async.Callback;
 
 import javapns.Push;
 import javapns.notification.PushedNotifications;
@@ -25,8 +26,9 @@ public class ApplePushNotificationService extends BaseLoggable implements PushNo
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public int push(Object targetToken, ToastMessage message) {
+	public void push(Object targetToken, ToastMessage message, Callback<PushNotificationResult> callback) {
 		boolean production = !this.debugMode;
+		int success = 0;
 
 		try {
 			if (targetToken instanceof List<?>) {
@@ -40,7 +42,7 @@ public class ApplePushNotificationService extends BaseLoggable implements PushNo
 
 					getLogger().debug("push notification success: {}",
 							notifications.getSuccessfulNotifications().size());
-					return notifications.getSuccessfulNotifications().size();
+					success = notifications.getSuccessfulNotifications().size();
 				}
 				getLogger().debug("dont't push because message content is null");
 			} else {
@@ -48,7 +50,7 @@ public class ApplePushNotificationService extends BaseLoggable implements PushNo
 					PushedNotifications result = Push.alert(message.getContent(), this.filePath, this.password,
 							production, (String) targetToken);
 					getLogger().debug("push notification success: {}", result.getSuccessfulNotifications().size());
-					return result.getSuccessfulNotifications().size();
+					success = result.getSuccessfulNotifications().size();
 				} else {
 					getLogger().debug("dont't push because message content is null");
 				}
@@ -56,6 +58,6 @@ public class ApplePushNotificationService extends BaseLoggable implements PushNo
 		} catch (Exception ex) {
 			getLogger().debug("push notification error", ex);
 		}
-		return 0;
+		callback.apply(new PushNotificationResult(success));
 	}
 }

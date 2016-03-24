@@ -1,12 +1,12 @@
 package com.gaia.hermes.model;
 
-import com.gaia.hermes.bean.PushNoficationConfigBean;
+import com.gaia.hermes.bean.PushNotificationConfigBean;
 import com.gaia.hermes.dao.PushNotificationConfigDAO;
 import com.nhb.common.db.models.AbstractModel;
 import com.nhb.common.db.sql.resp.SqlUpdateResponse;
 
 public class PushNotificationConfigModel extends AbstractModel {
-	public SqlUpdateResponse insert(PushNoficationConfigBean bean) {
+	public SqlUpdateResponse insert(PushNotificationConfigBean bean) {
 		SqlUpdateResponse response = new SqlUpdateResponse();
 		if (bean != null) {
 			try (PushNotificationConfigDAO dao = openDAO(PushNotificationConfigDAO.class)) {
@@ -38,7 +38,7 @@ public class PushNotificationConfigModel extends AbstractModel {
 		return response;
 	}
 
-	public PushNoficationConfigBean findById(byte[] id) {
+	public PushNotificationConfigBean findById(byte[] id) {
 		try (PushNotificationConfigDAO dao = openDAO(PushNotificationConfigDAO.class)) {
 			return dao.findById(id);
 		}

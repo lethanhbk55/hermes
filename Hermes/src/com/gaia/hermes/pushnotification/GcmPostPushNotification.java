@@ -8,6 +8,7 @@ import java.net.URL;
 
 import com.gaia.hermes.pushnotification.message.ToastMessage;
 import com.nhb.common.BaseLoggable;
+import com.nhb.common.async.Callback;
 
 @Deprecated
 public class GcmPostPushNotification extends BaseLoggable implements PushNoficationApi {
@@ -20,7 +21,7 @@ public class GcmPostPushNotification extends BaseLoggable implements PushNoficat
 	}
 
 	@Override
-	public int push(Object targetToken, ToastMessage message) {
+	public void push(Object targetToken, ToastMessage message, Callback<PushNotificationResult> callback) {
 		String data = String.format("{\"registration_ids\": [\"%s\"],\"data\": {\"message\": \"%s\"}}", targetToken,
 				message);
 		try {
@@ -29,7 +30,7 @@ public class GcmPostPushNotification extends BaseLoggable implements PushNoficat
 			getLogger().error("push notication error", e);
 		}
 
-		return 0;
+		callback.apply(new PushNotificationResult(0));
 	}
 
 	private String sendHttpRequest(String url, String data) throws Exception {

@@ -49,4 +49,10 @@ public class GcmKeyModel extends AbstractModel {
 			return dao.update(bean);
 		}
 	}
+
+	public GcmKeyBean findByKey(String key) {
+		try (GcmKeyDAO dao = openDAO(GcmKeyDAO.class)) {
+			return dao.findByKey(key);
+		}
+	}
 }

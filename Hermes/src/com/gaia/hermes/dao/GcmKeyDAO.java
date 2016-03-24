@@ -25,4 +25,7 @@ public abstract class GcmKeyDAO extends BaseMySqlDAO implements Transactional {
 
 	@SqlUpdate("update gcm_key set `key` = :key where id = :id")
 	public abstract int update(@BindBean GcmKeyBean bean);
+
+	@SqlQuery("select * from gcm_key where `key` = :key")
+	public abstract GcmKeyBean findByKey(@Bind("key") String key);
 }

@@ -2,7 +2,7 @@ package com.gaia.hermes.tasks;
 
 import java.util.UUID;
 
-import com.gaia.hermes.bean.PushNoficationConfigBean;
+import com.gaia.hermes.bean.PushNotificationConfigBean;
 import com.gaia.hermes.jobs.CreateApplicationJob;
 import com.gaia.hermes.model.PushNotificationConfigModel;
 import com.gaia.hermes.statics.Field;
@@ -13,7 +13,7 @@ import com.nhb.common.transaction.impl.AbstractDistributedTransactionTask;
 
 public class CreatePushNotificationConfigTask extends AbstractDistributedTransactionTask {
 	private PushNotificationConfigModel model;
-	private PushNoficationConfigBean bean;
+	private PushNotificationConfigBean bean;
 
 	public CreatePushNotificationConfigTask(PushNotificationConfigModel model) {
 		this.model = model;
@@ -22,7 +22,7 @@ public class CreatePushNotificationConfigTask extends AbstractDistributedTransac
 	@Override
 	public void execute(PuObject data) {
 		try {
-			PushNoficationConfigBean bean = new PushNoficationConfigBean();
+			PushNotificationConfigBean bean = new PushNotificationConfigBean();
 			bean.setId(UUID.randomUUID());
 			if (this.getJob() instanceof CreateApplicationJob) {
 				CreateApplicationJob job = (CreateApplicationJob) this.getJob();
@@ -49,11 +49,11 @@ public class CreatePushNotificationConfigTask extends AbstractDistributedTransac
 		this.model.delete(this.bean.getId());
 	}
 
-	public PushNoficationConfigBean getBean() {
+	public PushNotificationConfigBean getBean() {
 		return bean;
 	}
 
-	private void setBean(PushNoficationConfigBean bean) {
+	private void setBean(PushNotificationConfigBean bean) {
 		this.bean = bean;
 	}
 

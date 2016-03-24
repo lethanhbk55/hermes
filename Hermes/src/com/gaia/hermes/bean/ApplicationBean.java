@@ -65,4 +65,8 @@ public class ApplicationBean extends UUIDBean {
 		puo.setLong(Field.TIMESTAMP, this.getTimestamp());
 		return puo;
 	}
+
+	public void autoTimestamp() {
+		this.timestamp = (int) (System.currentTimeMillis() / 1000);
+	}
 }
