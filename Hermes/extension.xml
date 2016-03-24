@@ -50,7 +50,7 @@
 		<http>
 			<name>http-9204</name>
 			<server>hermes_http_server_2</server>
-			<deserializer>com.gaia.hermes.HttpMultipartDeserializer</deserializer>
+			<deserializer>com.mario.entity.message.transcoder.http.HttpMultipartDeserializer</deserializer>
 			<path>/*</path>
 			<usemultipath>true</usemultipath>
 			<async>true</async>

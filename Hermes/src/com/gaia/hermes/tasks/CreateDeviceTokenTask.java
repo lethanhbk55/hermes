@@ -38,11 +38,13 @@ public class CreateDeviceTokenTask extends AbstractDistributedTransactionTask {
 					DeviceTokenBean deviceToken = this.model.findByDeviceIdAndApplicationId(bean.getDeviceId(),
 							bean.getApplicationId());
 					if (deviceToken != null) {
+						deviceToken.setNotificationToken(data.getString(Field.TOKEN));
 						SqlUpdateResponse response = this.model.update(deviceToken);
 						if (response.isSuccess()) {
 							setSuccessful(true);
 							this.deviceToken = deviceToken;
-							getLogger().debug("update device token success, token: {}", this.deviceToken.getNotificationToken());
+							getLogger().debug("update device token success, token: {}",
+									this.deviceToken.getNotificationToken());
 						} else {
 							setFailureDetails(PuObject.fromObject(new MapTuple<>(Field.EX,
 									"update device token is failure, error " + response.getException().getMessage())));
@@ -58,8 +60,9 @@ public class CreateDeviceTokenTask extends AbstractDistributedTransactionTask {
 							this.deviceToken = bean;
 							setSuccessful(true);
 						} else {
-							setFailureDetails(PuObject.fromObject(new MapTuple<>(Field.EX,
-									"creating device token is failure, error " + response.getException().getMessage())));
+							setFailureDetails(PuObject
+									.fromObject(new MapTuple<>(Field.EX, "creating device token is failure, error "
+											+ response.getException().getMessage())));
 							throw new RuntimeException(response.getException());
 						}
 					}
@@ -74,7 +77,8 @@ public class CreateDeviceTokenTask extends AbstractDistributedTransactionTask {
 				throw new RuntimeException(ex);
 			}
 		} else {
-			setFailureDetails(PuObject.fromObject(new MapTuple<>(Field.EX, "creating device token's paramaters are missing")));
+			setFailureDetails(
+					PuObject.fromObject(new MapTuple<>(Field.EX, "creating device token's paramaters are missing")));
 			throw new RuntimeException();
 		}
 	}
