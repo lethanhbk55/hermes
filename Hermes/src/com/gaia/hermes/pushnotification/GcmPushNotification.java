@@ -37,7 +37,7 @@ public class GcmPushNotification extends BaseLoggable implements PushNoficationA
 			Message gcmMessage = builder.build();
 			if (targetToken instanceof List<?>) {
 				if (((List<?>) targetToken).size() > 0) {
-					List<List<String>> packs = Tokens.splitTokens((List<String>) targetToken, 1000);
+					List<List<String>> packs = Tokens.splitTokens((List<String>) targetToken, 500);
 					int success = 0;
 					for (List<String> pack : packs) {
 						getLogger().debug("pack size: {}", pack.size());
