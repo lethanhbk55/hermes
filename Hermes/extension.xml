@@ -5,7 +5,7 @@
 		<sql>
 			<name>hermes_mysql</name>
 			<variables>
-				<variable name="url" type="string">jdbc:mysql://localhost:3306/gaia_hermes
+				<variable name="url" type="string">jdbc:mysql://localhost:3306/hermes
 				</variable>
 				<variable name="driverClassName" type="string">com.mysql.jdbc.Driver
 				</variable>
@@ -36,9 +36,23 @@
 
 	<gateways>
 		<http>
-			<name>http-9293</name>
+			<name>
+				http_9293_1
+			</name>
 			<server>hermes_http_server_1</server>
 			<path>/*</path>
+			<async>true</async>
+			<workerpool>
+				<poolsize>8</poolsize>
+				<ringbuffersize>2048</ringbuffersize>
+				<threadnamepattern>Worker Pool #%d</threadnamepattern>
+			</workerpool>
+		</http>
+
+		<http>
+			<name>http_9293_2</name>
+			<server>hermes_http_server_1</server>
+			<path>/messsenger</path>
 			<async>true</async>
 			<workerpool>
 				<poolsize>8</poolsize>
@@ -67,7 +81,7 @@
 			<name>MarioHermes</name>
 			<handle>com.gaia.hermes.MessengerHandler</handle>
 			<bind>
-				<gateway>http-9293</gateway>
+				<gateway>http_9293_2</gateway>
 			</bind>
 			<variables>
 				<variable name="dataSourceName" type="string">hermes_mysql</variable>
@@ -81,6 +95,28 @@
 			<bind>
 				<gateway>http-9204</gateway>
 			</bind>
+		</handler>
+
+		<handler>
+			<name>HermesConvertData</name>
+			<handle>com.gaia.hermes.HermesConvertDataHandler</handle>
+			<bind>
+				<gateway>http_9293_1</gateway>
+			</bind>
+
+			<variables>
+				<variable name="mysql" type="String">hermes_mysql</variable>
+			
+				<variable name="commands" type="puobject">
+					<variable name="convert" type="string">com.gaia.hermes.processor.converter.ConvertAllDeviceTokenProcessor</variable>
+					<variable name="register" type="string">com.gaia.hermes.processor.converter.RegisterDeviceTokenProcessor</variable>
+				</variable>
+
+				<variable name="bai389_appId" type="string">f35ee7ed-8641-4efe-be97-c2551595954a</variable>
+				<variable name="hermes2HandlerName" type="string">hermes2_register_handler</variable>
+				<variable name="gcmAuthenId" type="string">492ad43c-dad4-4eb0-b732-24ffe8fcc56b</variable>
+				<variable name="appleAuthenId" type="string">4b06f201-4fa8-46ba-ae94-3fe7ab58034d</variable>
+			</variables>
 		</handler>
 	</lifecycles>
 </mario>

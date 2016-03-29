@@ -33,4 +33,11 @@ public class Field extends DBField {
 	public static final String COUNT = "count";
 	public static final String NUMBER = "number";
 	public static final String TOKENS = "tokens";
+	public static final String MYSQL = "mysql";
+	public static final String COMMANDS = "commands";
+	public static final String AUTHENTICATOR_ID = "authenticatorId";
+	public static final String APP_ID = "appId";
+	public static final String SERVICE_TYPE = "serviceType";
+	public static final String GCM_AUTHEN_ID = "gcmAuthenId";
+	public static final String APPLE_AUTHEN_ID = "appleAuthenId";
 }
